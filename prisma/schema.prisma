@@ -18,3 +18,15 @@ model Products {
   createdAt           DateTime        @default(now())
   updatedAt           DateTime        @default(now())
 }
+
+model Users {
+  id                  Int             @id @default(autoincrement())
+  username            String          @unique @db.VarChar(255)
+  email               String          @unique @db.VarChar(255)
+  password            String          @unique @db.VarChar(255)
+  role                String?         @default("user")
+  isAdmin             Boolean?        @default(false)
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @default(now())
+}
+
