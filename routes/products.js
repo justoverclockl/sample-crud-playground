@@ -1,5 +1,7 @@
 const express = require('express')
 const prisma = require('../lib/prisma/client')
+const validateParams = require('../middlewares/validateParams')
+const { param } = require('express-validator')
 const router = express.Router()
 
 /**
@@ -39,7 +41,6 @@ const router = express.Router()
  *         image: https://www.apple.com/newsroom/images/product/iphone/geo/Apple-iPhone-14-iPhone-14-Plus-hero-220907-geo_Full-Bleed-Image.jpg.large.jpg
  *         price: 999.9
  */
-
 
 /**
  * @swagger
@@ -87,20 +88,29 @@ const router = express.Router()
 
 router.get('/products', async (req, res, next) => {
     const products = await prisma.products.findMany()
-    res.status(200).send(products)
+    res.status(200).send({
+        total: products?.length,
+        products: products,
+    })
 })
 
-router.get('/products/:id(\\d+)', async (req, res, next) => {
-    const productId = Number(req.params.id)
-    const product = await prisma.products.findUnique({
-        where: { id: productId },
-    })
-    if (!product) {
-        res.status(404)
-        return next(`Cannot GET /planets/${productId}`)
+router.get(
+    '/products/:id',
+    validateParams([
+        param('id').isInt().withMessage('Product id must be an Integer'),
+    ]),
+    async (req, res, next) => {
+        const { productId } = req.params
+        const product = await prisma.products.findUnique({
+            where: { id: productId },
+        })
+        if (!product) {
+            res.status(404)
+            return next(`Cannot GET /products/${productId}`)
+        }
+        res.status(200).json(product)
     }
-    res.status(200).json(product)
-})
+)
 
 /**
  * @swagger
@@ -123,8 +133,8 @@ router.get('/products/:id(\\d+)', async (req, res, next) => {
  *           $ref: '#/components/schemas/Product'
  */
 
-router.post('/products', async (req, res) => {
-
+router.post('/products', async (req, res, next) => {
+    try {
         const addedProduct = await prisma.products.create({
             data: {
                 title: req.body.title,
@@ -132,44 +142,63 @@ router.post('/products', async (req, res) => {
                 category: req.body.category,
                 isAvailable: req.body.isAvailable,
                 image: req.body.image,
-                price: req.body.price
-            }
+                price: req.body.price,
+            },
         })
         res.status(201).json(addedProduct)
+    } catch (error) {
+        res.status(500)
+        next({
+            message: 'An error has occurred',
+            error: error,
+        })
     }
-)
+})
 
-router.delete('/products/:id(\\d+)', async (req, res, next) => {
-        const productId = Number(req.params.id)
+router.delete(
+    '/products/:id',
+    validateParams([
+        param('id').isInt().withMessage('Products id must be an Integer'),
+    ]),
+    async (req, res, next) => {
+        const { productId } = req.params
 
         try {
             await prisma.products.delete({
-                where: { id: productId },
+                where: {
+                    id: productId,
+                },
             })
-            res.status(204).send({
-                message: `The resource with id of ${productId} was successfully deleted from database.`,
-            })
+            res.status(200).send({ message: 'Product deleted successfully' })
         } catch (error) {
             res.status(404)
-            next(`Cannot DELETE /planets/${productId}`)
+            next(`Cannot DELETE /products/${productId}`)
         }
     }
 )
 
-router.patch('/products/:id(\\d+)', async (req, res, next) => {
-        const productId = Number(req.params.id)
+router.patch(
+    '/products/:id',
+    validateParams([
+        param('id').isInt().withMessage('App id must be an Integer'),
+    ]),
+    async (req, res, next) => {
+        const { productId } = req.params
         const productData = req.body
-
 
         try {
             const product = await prisma.products.update({
                 where: { id: productId },
-                data: productData
+                data: productData,
             })
+            if (!product) {
+                res.status(404)
+                return next(`A product with this id does not exist!`)
+            }
             res.status(201).json(product)
         } catch (error) {
             res.status(404)
-            next(`Cannot PATCH /planets/${productId}`)
+            next(`Cannot PATCH /products/${productId}`)
         }
     }
 )
