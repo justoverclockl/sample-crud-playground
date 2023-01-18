@@ -1,13 +1,14 @@
 {
-  "name": "nuova-cartella",
+  "name": "epicode-crud-server",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "start": "pm2-runtime start server.js.js -i --exp-backoff-restart-delay=100"
   },
   "keywords": [],
-  "author": "",
+  "author": "Marco Colia",
   "license": "ISC",
   "dependencies": {
     "@prisma/client": "^4.9.0",
@@ -15,6 +16,7 @@
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
+    "pm2": "^5.2.2",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^4.6.0"
   },
