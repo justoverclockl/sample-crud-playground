@@ -100,7 +100,7 @@ router.get(
         param('id').isInt().withMessage('Product id must be an Integer'),
     ]),
     async (req, res, next) => {
-        const { productId } = req.params
+        const productId = Number(req.params.id)
         const product = await prisma.products.findUnique({
             where: { id: productId },
         })
@@ -161,18 +161,19 @@ router.delete(
         param('id').isInt().withMessage('Products id must be an Integer'),
     ]),
     async (req, res, next) => {
-        const { productId } = req.params
-
+        const productId = Number(req.params.id)
         try {
-            await prisma.products.delete({
+            const deleteProduct = await prisma.products.delete({
                 where: {
                     id: productId,
                 },
             })
+            if (!deleteProduct) {
+                return res.status(404).send(`Product with id ${productId} not found`)
+            }
             res.status(200).send({ message: 'Product deleted successfully' })
         } catch (error) {
-            res.status(404)
-            next(`Cannot DELETE /products/${productId}`)
+            next(error)
         }
     }
 )
@@ -183,7 +184,7 @@ router.patch(
         param('id').isInt().withMessage('App id must be an Integer'),
     ]),
     async (req, res, next) => {
-        const { productId } = req.params
+        const productId = Number(req.params.id)
         const productData = req.body
 
         try {
